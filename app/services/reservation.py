@@ -23,6 +23,26 @@ def create_reservation(session: Session, reservation_create: schemas.Reservation
         raise Exception("Table does not exist.")
 
     def is_table_available(new_start, new_end):
+        # Вероятно, мы могли бы написать более эффективную логику на уровне базы данных таким образом:
+
+        # session.execute(
+        #     select(Reservation)
+        #     .where(
+        #         Reservation.table_id == table_id,
+        #         Reservation.reservation_time < new_end,
+        #         (
+        #             Reservation.reservation_time
+        #             + func.make_interval(
+        #                 mins=cast(Reservation.duration_minutes, Integer)
+        #             )
+        #         )
+        #         > new_start,
+        #     )
+        #     .limit(1)
+        # ).first()
+
+        # Но здесь нужно помнить один нуанс – функция func.make_interval специфична для PostgreSQL. Мы бы написали логику для конкретной базы данных, чтобы вычислить `reservation_time + timedelta` для каждой строки. Предположим, мы меняем нашу базу данных на SQLite или что-то еще, наш код сразу же ломается. Поэтому для простоты мы вычисляем это в памяти. Поскольку наш вариант использования - ресторан, сохраненные данные в таблице бронирования объективно не превышают нескольких сотен строк.
+
         reservations = (
             session.execute(
                 select(Reservation).where(
